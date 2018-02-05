@@ -21,6 +21,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import org.duckdns.spacedock.badassvishnu.WorkLoader.CarBlock;
 import java.util.ArrayList;
+import org.duckdns.spacedock.commonutils.PropertiesHandler;
 
 /**
  * classe processant les résultats des workers ainsi que des éléments de
@@ -87,13 +88,13 @@ class DataProcessor implements ICaracUser
      */
     public DataProcessor(int p_minCol, int p_maxCol, int p_step, CaracWalker p_walker, String p_baseFileName)
     {
-	m_meanFileName = "MEAN_" + p_baseFileName + ".csv";
-	m_chancesFileName = "CHANCES_" + p_baseFileName + ".csv";
+	m_meanFileName = PropertiesHandler.getInstance("BadassVishnu").getString("mean") + p_baseFileName + PropertiesHandler.getInstance("BadassVishnu").getString("csv");
+	m_chancesFileName = PropertiesHandler.getInstance("BadassVishnu").getString("chances") + p_baseFileName + PropertiesHandler.getInstance("BadassVishnu").getString("csv");
 
 	int maxRang = p_walker.getMaxRang();
 	m_tabMean = new int[maxRang][maxRang][maxRang + 1/*la compétence a des valeurs de 0 à rangMax*/];
 	m_walker = p_walker;
-	String subHeaderPrefix = "T,D,C";
+	String subHeaderPrefix = PropertiesHandler.getInstance("BadassVishnu").getString("prefix");
 	String buf = "";
 
 	int nbND = ((p_maxCol - p_minCol) / p_step) + 1;//la division entre int est une troncature en Java
@@ -107,10 +108,10 @@ class DataProcessor implements ICaracUser
 
 	for (int nd : m_tabND)
 	{
-	    buf = buf.concat(",ND" + nd);
+	    buf = buf.concat("," + PropertiesHandler.getInstance("BadassVishnu").getString("ND") + nd);
 	}
 	m_NDHeadersLine = subHeaderPrefix.concat(buf + "\n");
-	m_meanHeaderLine = subHeaderPrefix.concat(",moyenne\n");
+	m_meanHeaderLine = subHeaderPrefix.concat("," + PropertiesHandler.getInstance("BadassVishnu").getString("moy") + "\n");
 	m_chancesLines = new ArrayList<>();
 	m_meanLines = new ArrayList<>();
     }

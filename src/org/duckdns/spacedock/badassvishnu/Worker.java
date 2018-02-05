@@ -18,6 +18,7 @@ package org.duckdns.spacedock.badassvishnu;
 
 import org.duckdns.spacedock.badassvishnu.WorkLoader.CarBlock;
 import java.util.Set;
+import org.duckdns.spacedock.commonutils.PropertiesHandler;
 import org.duckdns.spacedock.upengine.libupsystem.RollGenerator;
 
 /**
@@ -76,7 +77,8 @@ public class Worker implements Runnable
     {//méthode qui sera automatiquement appelée par le run du Thread
 	if (verbose)
 	{
-	    String msg = "        ==worker" + m_id + "==>Yep daddy I gonna slice through chunk : ";//TODO resources pour String
+
+	    String msg = PropertiesHandler.getInstance("BadassVishnu").getString("worker1") + m_id + PropertiesHandler.getInstance("BadassVishnu").getString("worker2");
 	    for (CarBlock c : m_chunk)
 	    {
 		msg = msg.concat(c.toString() + " ");
@@ -89,7 +91,7 @@ public class Worker implements Runnable
 	{
 	    if (verbose)
 	    {
-		System.out.println("        ==worker" + m_id + "==>Going for block:" + c.toString());
+		System.out.println(PropertiesHandler.getInstance("BadassVishnu").getString("worker1") + m_id + PropertiesHandler.getInstance("BadassVishnu").getString("worker3") + c.toString());
 	    }
 	    int sum = 0;
 	    int[] chances = new int[m_lND.length];
