@@ -47,7 +47,8 @@ class CaracWalker
     }
 
     /**
-     * parcours toutes les combinaisons de caracs jusqu'à maxRang
+     * parcours toutes les combinaisons de caracs jusqu'à maxRang et appelle la
+     * méthode idoine de l'objet passé en paramétre
      *
      * @param p_user un objet implémentant l'interface ICaracUser et ayant
      * besoin d'avoir sa méthode useCarac appelée répétitivement pour chaque

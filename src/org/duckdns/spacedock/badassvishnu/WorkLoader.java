@@ -32,7 +32,7 @@ class WorkLoader implements ICaracUser//TODO blinder méthodes partout
     /**
      * ensemble de tous les groupes de caracs
      */
-    private final HashSet<CarComb> m_lCarGroup;
+    private final HashSet<CarBlock> m_lCarGroup;
     /**
      * CaracWalker allant permettre de remplir m_lCarGroup
      */
@@ -60,17 +60,17 @@ class WorkLoader implements ICaracUser//TODO blinder méthodes partout
     Set allocate(int p_nbProcessors)
     {
 	initializeAllocator();
-	HashSet<HashSet<CarComb>> result = new HashSet<>();
+	HashSet<HashSet<CarBlock>> result = new HashSet<>();
 	int nbLines = m_lCarGroup.size();
 	int nbWorkers = (p_nbProcessors < nbLines) ? p_nbProcessors : nbLines;
 	int baseChunkSize = nbLines / nbWorkers;//troncature, le chunk de base vaut la partie entière de la division du nombre de lignes par le nombre de threads
 	int nbFloodWorkers = nbLines % nbWorkers;//le reste : c'est à dire le nombre de threads de débordement (qui auront un CaracGroup de plus que les autres)
 	int floodCounter = 0;
-	Iterator<CarComb> iterator = m_lCarGroup.iterator();
+	Iterator<CarBlock> iterator = m_lCarGroup.iterator();
 
 	for (int w = 0; w < nbWorkers; ++w)
 	{//pour chaque thread
-	    HashSet<CarComb> chunk = new HashSet<>();
+	    HashSet<CarBlock> chunk = new HashSet<>();
 	    int nElts = baseChunkSize + ((floodCounter < nbFloodWorkers) ? 1 : 0);//si c'est un thread de débordement il recevra un CaracGroup de plus
 	    for (int c = 0; c < nElts; ++c)
 	    {//pour chaque élément du chunk final
@@ -85,7 +85,7 @@ class WorkLoader implements ICaracUser//TODO blinder méthodes partout
     @Override
     public void useCarac(int p_trait, int p_dom, int p_comp)
     {
-	m_lCarGroup.add(new CarComb(p_trait, p_dom, p_comp));//la boucle de CaracWalker aura pour effet d'ajouter toutes les combinaisons possibles de caractéristiques à ce WorkLoader
+	m_lCarGroup.add(new CarBlock(p_trait, p_dom, p_comp));//la boucle de CaracWalker aura pour effet d'ajouter toutes les combinaisons possibles de caractéristiques à ce WorkLoader
     }
 
     /**
@@ -102,9 +102,9 @@ class WorkLoader implements ICaracUser//TODO blinder méthodes partout
     /**
      * petit struct pour une combinaison de carac donnée
      */
-    static class CarComb
+    static class CarBlock
     {
-	CarComb(int p_trait, int p_dom, int p_comp)
+	CarBlock(int p_trait, int p_dom, int p_comp)
 	{
 	    trait = p_trait;
 	    dom = p_dom;

@@ -16,60 +16,97 @@
  */
 package org.duckdns.spacedock.badassvishnu;
 
-import org.duckdns.spacedock.badassvishnu.WorkLoader.CarComb;
+import org.duckdns.spacedock.badassvishnu.WorkLoader.CarBlock;
 import java.util.Set;
 import org.duckdns.spacedock.upengine.libupsystem.RollGenerator;
 
 /**
+ * classe implementant la logique de traitement statistique par ligne
  *
  * @author ykonoclast
  */
-public class Worker implements Runnable//TODO JAVADOCER
+public class Worker implements Runnable
 {
-    private final Set<CarComb> m_chunk;
+    /**
+     * le chunk de blocs de caractéristiques dont ce worker aura la charge
+     */
+    private final Set<CarBlock> m_chunk;
+    /**
+     * l'identifiant du worker, pour les IO
+     */
     private final int m_id;
+    /**
+     * la liste des ND à tester
+     */
     private final int[] m_lND;
+    /**
+     * le processeur de résultats qui recevra les sorties de ce worker
+     */
     private DataProcessor m_processor;
+    /**
+     * le nombre de jets à effectuer
+     */
     private final int m_nbRoll;
+    /**
+     * déclenche des sorties terminal supplémentaires
+     */
+    private boolean verbose;
 
-    public Worker(int p_id, Set<CarComb> p_chunk, DataProcessor p_processor, int p_nbRoll)//TODO virer TABND, appeler le processor a la place
+    /**
+     * constructeur
+     *
+     * @param p_id
+     * @param p_chunk
+     * @param p_processor
+     * @param p_nbRoll
+     * @param p_verbose
+     */
+    public Worker(int p_id, Set<CarBlock> p_chunk, DataProcessor p_processor, int p_nbRoll, boolean p_verbose)
     {
 	m_chunk = p_chunk;
 	m_id = p_id;
 	m_processor = p_processor;
 	m_lND = m_processor.getListND();
 	m_nbRoll = p_nbRoll;
+	verbose = p_verbose;
     }
 
     @Override
     public void run()
-    {
-	String msg = "	==worker" + m_id + "==>Yep daddy I gonna slice through chunk : ";//TODO resources pour String
-	for (CarComb c : m_chunk)
+    {//méthode qui sera automatiquement appelée par le run du Thread
+	if (verbose)
 	{
-	    msg = msg.concat(c.toString() + " ");
+	    String msg = "        ==worker" + m_id + "==>Yep daddy I gonna slice through chunk : ";//TODO resources pour String
+	    for (CarBlock c : m_chunk)
+	    {
+		msg = msg.concat(c.toString() + " ");
+	    }
+	    System.out.println(msg);
 	}
-	System.out.println(msg);
 
-	for (CarComb c : m_chunk)
+	//pour chaque bloc de caractéristiques
+	for (CarBlock c : m_chunk)
 	{
-	    System.out.println("    ==worker" + m_id + "==>Going for block:" + c.toString());
+	    if (verbose)
+	    {
+		System.out.println("        ==worker" + m_id + "==>Going for block:" + c.toString());
+	    }
 	    int sum = 0;
 	    int[] chances = new int[m_lND.length];
 	    for (int indRoll = 0; indRoll < m_nbRoll; ++indRoll)
-	    {
+	    {//on lance les dés autant de fois que spécifié, vérifiant au fur et à mesure le respect des ND et loggant les résultats pour calculer les moyennes
 		int alea = RollGenerator.getInstance().lancerGarder(c.dom + c.comp, c.trait, false);
-		alea = (c.comp >= 3) ? alea + 5 : alea;
-		sum += alea;
+		alea = (c.comp >= 3) ? alea + 5 : alea;//bonus de rang
+		sum += alea;//pour les ;oyennes
 		for (int indND = 0; indND < m_lND.length; ++indND)
-		{
+		{//vérification du respect des divers ND spécifiés
 		    if (alea >= m_lND[indND])
 		    {
 			++chances[indND];
 		    }
 		}
 	    }
-
+	    //insertion des résultats dans le processeur de résultats
 	    m_processor.insertMean(c, sum / m_nbRoll);
 	    for (int indND = 0; indND < m_lND.length; ++indND)
 	    {

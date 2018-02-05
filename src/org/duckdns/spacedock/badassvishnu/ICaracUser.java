@@ -17,12 +17,20 @@
 package org.duckdns.spacedock.badassvishnu;
 
 /**
- * méthode ayant vocation à être appelée un grand nombre de fois par un
- * CaracWalker : autant de fois que de combinaisons possibles de caracs
+ * interface pour les objets ayant besoin qu'une de leurs méthodes soit appelée
+ * pour chaque combinaison possible de caractéristiques
  *
  * @author ykonoclast
  */
 interface ICaracUser
 {
+    /**
+     * méthode ayant vocation à être appelée un grand nombre de fois par un
+     * CaracWalker : autant de fois que de combinaisons possibles de caracs
+     *
+     * @param p_trait
+     * @param p_dom
+     * @param p_comp
+     */
     public void useCarac(int p_trait, int p_dom, int p_comp);
 }

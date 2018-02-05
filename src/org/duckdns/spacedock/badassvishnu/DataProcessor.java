@@ -19,38 +19,84 @@ package org.duckdns.spacedock.badassvishnu;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import org.duckdns.spacedock.badassvishnu.WorkLoader.CarComb;
+import org.duckdns.spacedock.badassvishnu.WorkLoader.CarBlock;
 import java.util.ArrayList;
 
 /**
+ * classe processant les résultats des workers ainsi que des éléments de
+ * paramétrage utiles au démarrage de ceux-ci
  *
  * @author ykonoclast
  */
-class DataProcessor implements ICaracUser//TODO JAVADOCER
+class DataProcessor implements ICaracUser
 {//TODO string dans les resources
+    /**
+     * tableau interne des résultats moyens aux jets, indicé dans l'ordre par
+     * traits, domaines et compétences
+     */
     private final int[][][] m_tabMean;
+    /**
+     * tableau interne des résultats moyens aux jets, indicé dans l'ordre par
+     * traits, domaines, compétences et ND
+     */
     private final int[][][][] m_tabChances;
+    /**
+     * lignes de résultats en chances de réussites à écrire dans le fichier
+     * final
+     */
     private final ArrayList<String> m_chancesLines;
+    /**
+     * lignes de résultats moyens à écrire dans le fichier final
+     */
     private final ArrayList<String> m_meanLines;
+    /**
+     * ligne en-tête pour les ND
+     */
     private final String m_NDHeadersLine;
+    /**
+     * ligne en-tête pour les moyennes
+     */
     private final String m_meanHeaderLine;
+    /**
+     * walker permettant de parcourir de façon uniforme toutes les combinaisons
+     * de caractéristiques
+     */
     private final CaracWalker m_walker;
+    /**
+     * tableau de tous les ND à traverser
+     */
     private final int[] m_tabND;
+    /**
+     * nom du fichier de sortie des résultats moyens
+     */
     private final String m_meanFileName;
+    /**
+     * nom du fichier de sortie des chances de réussite
+     */
     private final String m_chancesFileName;
 
+    /**
+     * constructeur
+     *
+     * @param p_minCol
+     * @param p_maxCol
+     * @param p_step
+     * @param p_walker
+     * @param p_baseFileName prototype du nom du fichier de sortie auquel sera
+     * accolé un préfixe et un suffixe idoine
+     */
     public DataProcessor(int p_minCol, int p_maxCol, int p_step, CaracWalker p_walker, String p_baseFileName)
     {
 	m_meanFileName = "MEAN_" + p_baseFileName + ".csv";
 	m_chancesFileName = "CHANCES_" + p_baseFileName + ".csv";
 
-	int maxRang = p_walker.getMaxRang();//TODO virer l'utilisation de getRang (et supprimer getRang) et faire initialiser ces tableaux par le caracwalker qui sera le seul du coup à connaître le maxrang
+	int maxRang = p_walker.getMaxRang();
 	m_tabMean = new int[maxRang][maxRang][maxRang + 1/*la compétence a des valeurs de 0 à rangMax*/];
 	m_walker = p_walker;
 	String subHeaderPrefix = "T,D,C";
 	String buf = "";
 
-	int nbND = ((p_maxCol - p_minCol) / p_step) + 1;
+	int nbND = ((p_maxCol - p_minCol) / p_step) + 1;//la division entre int est une troncature en Java
 	m_tabND = new int[nbND];
 	for (int i = 0; i < nbND; ++i)
 	{
@@ -74,42 +120,59 @@ class DataProcessor implements ICaracUser//TODO JAVADOCER
 	return m_tabND;
     }
 
+    /**
+     * fonction appelée à la toute fin du programme quand tous les workers ont
+     * rendu leurs résultats
+     *
+     * @throws IOException
+     */
     void process() throws IOException//TODO paramétrer nom des fichiers de sorties
     {
-	m_walker.walk(this);
+	m_walker.walk(this);//appel du walker pour initialiser les éléments via la méthode useCarac
 
 	FileWriter meanFile;
 	FileWriter chanceFile;
 	meanFile = new FileWriter(new File(m_meanFileName));
 	chanceFile = new FileWriter(new File(m_chancesFileName));
 
-	System.out.println("\n\nCHANCES");
-	System.out.print(m_NDHeadersLine);
+	//écriture du fichier de chances de réussite
 	chanceFile.write(m_NDHeadersLine);
-
 	for (String line : m_chancesLines)
 	{
-	    System.out.print(line);
 	    chanceFile.write(line);
-
 	}
-	System.out.print("\n\nMEAN RESULTS\n" + m_meanHeaderLine);
+
+	//écriture du fichier de résultats moyens
 	meanFile.write(m_meanHeaderLine);
 	for (String line : m_meanLines)
 	{
-	    System.out.print(line);
 	    meanFile.write(line);
 	}
+
+	//ménage, techniquement ce devrait être dans un finally mais le peu d'ampleur du programme ne fait pas craindre de fin prématurée (ou de difficulté particulière en ce cas)
 	meanFile.close();
 	chanceFile.close();
     }
 
-    synchronized void insertMean(CarComb p_combi, int p_mean)
+    /**
+     * insère un résultat moyen pour process en fin de programme
+     *
+     * @param p_combi
+     * @param p_mean
+     */
+    synchronized void insertMean(CarBlock p_combi, int p_mean)
     {
 	m_tabMean[p_combi.trait - 1][p_combi.dom - 1][p_combi.comp] = p_mean;//traits et domaines sont étagés de 1 à rang, il faut donc soustraire 1 pour convertir en indices, la compétence démarre bien à 0
     }
 
-    synchronized void insertChance(CarComb p_combi, int p_indND, int p_percent)
+    /**
+     * insère une chance de réussite pour process en fin de programme
+     *
+     * @param p_combi
+     * @param p_indND
+     * @param p_percent
+     */
+    synchronized void insertChance(CarBlock p_combi, int p_indND, int p_percent)
     {
 	m_tabChances[p_combi.trait - 1][p_combi.dom - 1][p_combi.comp][p_indND] = p_percent;//traits et domaines sont étagés de 1 à rang, il faut donc soustraire 1 pour convertir en indices, la compétence démarre bien à 0
     }

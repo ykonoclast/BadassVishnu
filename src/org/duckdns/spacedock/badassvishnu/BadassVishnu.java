@@ -7,6 +7,7 @@ package org.duckdns.spacedock.badassvishnu;
 
 import java.io.IOException;
 import java.util.Set;
+import org.duckdns.spacedock.commonutils.PropertiesHandler;
 
 /**
  *
@@ -20,15 +21,18 @@ public class BadassVishnu
      */
     public static void main(String[] args) throws InterruptedException, IOException
     {
+	long startTime = System.nanoTime();
 
+	//traitement des paramétres
 	final ArgP argp = new ArgP();
 	argp.addOption("-v", "Verbose");
-	argp.addOption("-c", "CARMAX", "max value for caracteristics, default=7");
-	argp.addOption("-d", "NBROLLS", "number of dicerolls per line, default=1 000 000");
-	argp.addOption("-m", "MIN", "minimum target number, default=5");
-	argp.addOption("-M", "MAX", "maximum target number, default=55");
-	argp.addOption("-s", "STEP", "step between two target numbers, default=5");
-	argp.addOption("-o", "PATH", "base name of output files [e.g.: myfile -> MEAN_myfile.csv & CHANCES_myfile.csv], default=vishnout");
+	argp.addOption("--help", PropertiesHandler.getInstance("BadassVishnu").getString("helpparam"));
+	argp.addOption("-c", "CARMAX", PropertiesHandler.getInstance("BadassVishnu").getString("carmaxparam"));
+	argp.addOption("-d", "NBROLLS", PropertiesHandler.getInstance("BadassVishnu").getString("rollparam"));
+	argp.addOption("-m", "MIN", PropertiesHandler.getInstance("BadassVishnu").getString("minparam"));
+	argp.addOption("-M", "MAX", PropertiesHandler.getInstance("BadassVishnu").getString("maxparam"));
+	argp.addOption("-s", "STEP", PropertiesHandler.getInstance("BadassVishnu").getString("stepparam"));
+	argp.addOption("-o", "PATH", PropertiesHandler.getInstance("BadassVishnu").getString("pathparam"));
 
 	try
 	{
@@ -40,46 +44,64 @@ public class BadassVishnu
 	    System.err.print(argp.usage());
 	    System.exit(1);
 	}
-	final boolean verbose = argp.has("-v");
-	final int maxRang = (argp.has("-c")) ? Integer.parseInt(argp.get("-c")) : 7;
-	final String filename = (argp.has("-o")) ? argp.get("-o") : "vishnout";
-	final int nbRoll = (argp.has("-d")) ? Integer.parseInt(argp.get("-d")) : 1000000;
-	final int minCol = (argp.has("-m")) ? Integer.parseInt(argp.get("-m")) : 5;
-	final int maxCol = (argp.has("-M")) ? Integer.parseInt(argp.get("-M")) : 55;
-	final int step = (argp.has("-s")) ? Integer.parseInt(argp.get("-s")) : 5;
 
-	int nbCores = Runtime.getRuntime().availableProcessors();
-
-	if (verbose)
-	{
-	    System.out.println("I gonna blast the shit out of the stats within the following parameters: NDmin=" + minCol + ", NDmax=" + maxCol + ", step=" + step + ", file name base=" + filename + ", nbRolls=" + nbRoll + ", carac max=" + maxRang + ", detected cores=" + nbCores);
+	if (argp.has("--help"))
+	{//affiche le ;essage d'aide et quitte
+	    System.out.println((argp.usage()));
 	}
+	else
+	{//c'est parti pour le programme normal
+	    final boolean verbose = argp.has("-v");
+	    final int maxRang = (argp.has("-c")) ? Integer.parseInt(argp.get("-c")) : 7;
+	    final String filename = (argp.has("-o")) ? argp.get("-o") : "vishnout";
+	    final int nbRoll = (argp.has("-d")) ? Integer.parseInt(argp.get("-d")) : 1000000;
+	    final int minCol = (argp.has("-m")) ? Integer.parseInt(argp.get("-m")) : 5;
+	    final int maxCol = (argp.has("-M")) ? Integer.parseInt(argp.get("-M")) : 55;
+	    final int step = (argp.has("-s")) ? Integer.parseInt(argp.get("-s")) : 5;
 
-	CaracWalker walker = new CaracWalker(maxRang);
-	WorkLoader allocator = new WorkLoader(walker);
-	Set<Set> chunks = allocator.allocate(nbCores);
+	    int nbCores = Runtime.getRuntime().availableProcessors();
 
-	DataProcessor processor = new DataProcessor(minCol, maxCol, step, walker, filename);
+	    if (verbose)
+	    {
+		System.out.println(PropertiesHandler.getInstance("BadassVishnu").getString("intro"));
+		System.out.println(PropertiesHandler.getInstance("BadassVishnu").getString("paramannounc") + " NDmin=" + minCol + ", NDmax=" + maxCol + ", step=" + step + ", file name base=" + filename + ", nbRolls=" + nbRoll + ", carac max=" + maxRang + ", detected cores=" + nbCores);
+		System.out.println(PropertiesHandler.getInstance("BadassVishnu").getString("ready"));
+	    }
 
-	Thread[] threads = new Thread[nbCores];
+	    //initialisation des objets
+	    CaracWalker walker = new CaracWalker(maxRang);
+	    WorkLoader allocator = new WorkLoader(walker);
+	    Set<Set> chunks = allocator.allocate(nbCores);
+	    DataProcessor processor = new DataProcessor(minCol, maxCol, step, walker, filename);
 
-	int i = 0;
+	    //création des workers
+	    Thread[] threads = new Thread[nbCores];
+	    int threadCounter = 0;
+	    for (Set chunk : chunks)
+	    {
+		Thread thread = new Thread(new Worker(threadCounter, chunk, processor, nbRoll, verbose));
+		thread.start();
+		threads[threadCounter] = thread;
+		++threadCounter;
+	    }
 
-	for (Set chunk : chunks)
-	{
-	    Thread thread = new Thread(new Worker(i, chunk, processor, nbRoll));
-	    thread.start();
-	    threads[i] = thread;
-	    ++i;
+	    //attente de la fin de tous les traitements
+	    for (int indThread = 0; indThread < threads.length; indThread++)
+	    {
+		threads[indThread].join();
+	    }
+
+	    //exploitation des résultats
+	    if (verbose)
+	    {
+		System.out.println(PropertiesHandler.getInstance("BadassVishnu").getString("processing"));
+	    }
+	    processor.process();
+	    long endTime = System.nanoTime();
+	    if (verbose)
+	    {
+		System.out.println(PropertiesHandler.getInstance("BadassVishnu").getString("done1") + " " + ((endTime - startTime) / 1000000000) + PropertiesHandler.getInstance("BadassVishnu").getString("done2"));
+	    }
 	}
-
-	for (i = 0;
-		i < threads.length;
-		i++)
-	{
-	    threads[i].join();
-	}
-
-	processor.process();
     }
 }
