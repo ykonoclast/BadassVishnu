@@ -5,6 +5,7 @@
  */
 package org.duckdns.spacedock.badassvishnu;
 
+import java.io.IOException;
 import java.util.Set;
 
 /**
@@ -17,7 +18,7 @@ public class BadassVishnu
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws InterruptedException
+    public static void main(String[] args) throws InterruptedException, IOException
     {
 
 	final ArgP argp = new ArgP();
@@ -39,21 +40,26 @@ public class BadassVishnu
 	    System.err.print(argp.usage());
 	    System.exit(1);
 	}
-	final boolean p_verbose = argp.has("-v");
-	int maxRang = (argp.has("-c")) ? Integer.parseInt(argp.get("-c")) : 7;
-	final String p_filename = (argp.has("-o")) ? argp.get("-o") : "vishnout";
-	int nbRoll = (argp.has("-d")) ? Integer.parseInt(argp.get("-d")) : 1000000;
-	int minCol = (argp.has("-m")) ? Integer.parseInt(argp.get("-m")) : 5;
-	int maxCol = (argp.has("-M")) ? Integer.parseInt(argp.get("-M")) : 55;
-	int step = (argp.has("-s")) ? Integer.parseInt(argp.get("-s")) : 5;
+	final boolean verbose = argp.has("-v");
+	final int maxRang = (argp.has("-c")) ? Integer.parseInt(argp.get("-c")) : 7;
+	final String filename = (argp.has("-o")) ? argp.get("-o") : "vishnout";
+	final int nbRoll = (argp.has("-d")) ? Integer.parseInt(argp.get("-d")) : 1000000;
+	final int minCol = (argp.has("-m")) ? Integer.parseInt(argp.get("-m")) : 5;
+	final int maxCol = (argp.has("-M")) ? Integer.parseInt(argp.get("-M")) : 55;
+	final int step = (argp.has("-s")) ? Integer.parseInt(argp.get("-s")) : 5;
 
 	int nbCores = Runtime.getRuntime().availableProcessors();
+
+	if (verbose)
+	{
+	    System.out.println("I gonna blast the shit out of the stats within the following parameters: NDmin=" + minCol + ", NDmax=" + maxCol + ", step=" + step + ", file name base=" + filename + ", nbRolls=" + nbRoll + ", carac max=" + maxRang + ", detected cores=" + nbCores);
+	}
 
 	CaracWalker walker = new CaracWalker(maxRang);
 	WorkLoader allocator = new WorkLoader(walker);
 	Set<Set> chunks = allocator.allocate(nbCores);
 
-	DataProcessor processor = new DataProcessor(minCol, maxCol, step, walker);
+	DataProcessor processor = new DataProcessor(minCol, maxCol, step, walker, filename);
 
 	Thread[] threads = new Thread[nbCores];
 

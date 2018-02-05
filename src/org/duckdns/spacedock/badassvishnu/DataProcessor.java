@@ -16,6 +16,9 @@
  */
 package org.duckdns.spacedock.badassvishnu;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import org.duckdns.spacedock.badassvishnu.WorkLoader.CarComb;
 import java.util.ArrayList;
 
@@ -33,9 +36,14 @@ class DataProcessor implements ICaracUser//TODO JAVADOCER
     private final String m_meanHeaderLine;
     private final CaracWalker m_walker;
     private final int[] m_tabND;
+    private final String m_meanFileName;
+    private final String m_chancesFileName;
 
-    public DataProcessor(int p_minCol, int p_maxCol, int p_step, CaracWalker p_walker)
+    public DataProcessor(int p_minCol, int p_maxCol, int p_step, CaracWalker p_walker, String p_baseFileName)
     {
+	m_meanFileName = "MEAN_" + p_baseFileName + ".csv";
+	m_chancesFileName = "CHANCES_" + p_baseFileName + ".csv";
+
 	int maxRang = p_walker.getMaxRang();//TODO virer l'utilisation de getRang (et supprimer getRang) et faire initialiser ces tableaux par le caracwalker qui sera le seul du coup à connaître le maxrang
 	m_tabMean = new int[maxRang][maxRang][maxRang + 1/*la compétence a des valeurs de 0 à rangMax*/];
 	m_walker = p_walker;
@@ -55,8 +63,8 @@ class DataProcessor implements ICaracUser//TODO JAVADOCER
 	{
 	    buf = buf.concat(",ND" + nd);
 	}
-	m_NDHeadersLine = subHeaderPrefix.concat(buf);
-	m_meanHeaderLine = subHeaderPrefix.concat(",moyenne");
+	m_NDHeadersLine = subHeaderPrefix.concat(buf + "\n");
+	m_meanHeaderLine = subHeaderPrefix.concat(",moyenne\n");
 	m_chancesLines = new ArrayList<>();
 	m_meanLines = new ArrayList<>();
     }
@@ -66,20 +74,34 @@ class DataProcessor implements ICaracUser//TODO JAVADOCER
 	return m_tabND;
     }
 
-    void process()//TODO paramétrer nom des fichiers de sorties
+    void process() throws IOException//TODO paramétrer nom des fichiers de sorties
     {
 	m_walker.walk(this);
-	System.out.println("CHANCES");
-	System.out.println(m_NDHeadersLine);
+
+	FileWriter meanFile;
+	FileWriter chanceFile;
+	meanFile = new FileWriter(new File(m_meanFileName));
+	chanceFile = new FileWriter(new File(m_chancesFileName));
+
+	System.out.println("\n\nCHANCES");
+	System.out.print(m_NDHeadersLine);
+	chanceFile.write(m_NDHeadersLine);
+
 	for (String line : m_chancesLines)
 	{
-	    System.out.println(line);
+	    System.out.print(line);
+	    chanceFile.write(line);
+
 	}
-	System.out.println("\n\nMOYENNES\n" + m_meanHeaderLine);
+	System.out.print("\n\nMEAN RESULTS\n" + m_meanHeaderLine);
+	meanFile.write(m_meanHeaderLine);
 	for (String line : m_meanLines)
 	{
-	    System.out.println(line);
+	    System.out.print(line);
+	    meanFile.write(line);
 	}
+	meanFile.close();
+	chanceFile.close();
     }
 
     synchronized void insertMean(CarComb p_combi, int p_mean)
@@ -97,11 +119,12 @@ class DataProcessor implements ICaracUser//TODO JAVADOCER
     {
 	String carHeader = p_trait + "," + p_dom + "," + p_comp;
 	String chanceLine = carHeader;
-	String meanLine = carHeader.concat("," + m_tabMean[p_trait - 1][p_dom - 1][p_comp]);
+	String meanLine = carHeader.concat("," + m_tabMean[p_trait - 1][p_dom - 1][p_comp] + "\n");
 	for (int percent : m_tabChances[p_trait - 1][p_dom - 1][p_comp])
 	{
 	    chanceLine = chanceLine.concat("," + percent);
 	}
+	chanceLine = chanceLine.concat("\n");
 	m_chancesLines.add(chanceLine);
 	m_meanLines.add(meanLine);
     }
