@@ -14,37 +14,56 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package badassvishnu;
+package org.duckdns.spacedock.badassvishnu;
 
-import badassvishnu.ChunkAllocator.CarComb;
+import org.duckdns.spacedock.badassvishnu.WorkLoader.CarComb;
 import java.util.ArrayList;
 
 /**
  *
  * @author ykonoclast
  */
-class ResultProcessor implements ICaracUser//TODO JAVADOCER
-{
+class DataProcessor implements ICaracUser//TODO JAVADOCER
+{//TODO string dans les resources
     private final int[][][] m_tabMean;
     private final int[][][][] m_tabChances;
     private final ArrayList<String> m_chancesLines;
     private final ArrayList<String> m_meanLines;
     private final String m_NDHeadersLine;
+    private final String m_meanHeaderLine;
     private final CaracWalker m_walker;
+    private final int[] m_tabND;
 
-    public ResultProcessor(int p_maxRang, int[] p_lND, CaracWalker p_walker)
+    public DataProcessor(int p_minCol, int p_maxCol, int p_step, CaracWalker p_walker)
     {
-	m_tabMean = new int[p_maxRang][p_maxRang][p_maxRang + 1/*la compétence a des valeurs de 0 à rangMax*/];
-	m_tabChances = new int[p_maxRang][p_maxRang][p_maxRang + 1/*la compétence a des valeurs de 0 à rangMax*/][p_lND.length];
+	int maxRang = p_walker.getMaxRang();//TODO virer l'utilisation de getRang (et supprimer getRang) et faire initialiser ces tableaux par le caracwalker qui sera le seul du coup à connaître le maxrang
+	m_tabMean = new int[maxRang][maxRang][maxRang + 1/*la compétence a des valeurs de 0 à rangMax*/];
 	m_walker = p_walker;
-	String buf = "X";
-	for (int nd : p_lND)
+	String subHeaderPrefix = "T,D,C";
+	String buf = "";
+
+	int nbND = ((p_maxCol - p_minCol) / p_step) + 1;
+	m_tabND = new int[nbND];
+	for (int i = 0; i < nbND; ++i)
 	{
-	    buf = buf.concat("," + nd);
+	    int ND = p_minCol + p_step * i;
+	    m_tabND[i] = ND;
 	}
-	m_NDHeadersLine = buf;
+	m_tabChances = new int[maxRang][maxRang][maxRang + 1/*la compétence a des valeurs de 0 à rangMax*/][m_tabND.length];
+
+	for (int nd : m_tabND)
+	{
+	    buf = buf.concat(",ND" + nd);
+	}
+	m_NDHeadersLine = subHeaderPrefix.concat(buf);
+	m_meanHeaderLine = subHeaderPrefix.concat(",moyenne");
 	m_chancesLines = new ArrayList<>();
 	m_meanLines = new ArrayList<>();
+    }
+
+    int[] getListND()
+    {
+	return m_tabND;
     }
 
     void process()//TODO paramétrer nom des fichiers de sorties
@@ -56,7 +75,7 @@ class ResultProcessor implements ICaracUser//TODO JAVADOCER
 	{
 	    System.out.println(line);
 	}
-	System.out.println("\n\nMOYENNES");
+	System.out.println("\n\nMOYENNES\n" + m_meanHeaderLine);
 	for (String line : m_meanLines)
 	{
 	    System.out.println(line);
@@ -76,7 +95,7 @@ class ResultProcessor implements ICaracUser//TODO JAVADOCER
     @Override
     public void useCarac(int p_trait, int p_dom, int p_comp)
     {
-	String carHeader = "T" + p_trait + ",D" + p_dom + ",C" + p_comp;
+	String carHeader = p_trait + "," + p_dom + "," + p_comp;
 	String chanceLine = carHeader;
 	String meanLine = carHeader.concat("," + m_tabMean[p_trait - 1][p_dom - 1][p_comp]);
 	for (int percent : m_tabChances[p_trait - 1][p_dom - 1][p_comp])

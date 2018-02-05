@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package badassvishnu;
+package org.duckdns.spacedock.badassvishnu;
 
 /**
  * Cette classe encapsule les opérations de parcours de l'ensemble des caracs
@@ -39,6 +39,11 @@ class CaracWalker
     CaracWalker(int p_maxRang)
     {
 	maxRang = p_maxRang;
+    }
+
+    int getMaxRang()
+    {
+	return maxRang;
     }
 
     /**

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package badassvishnu;
+package org.duckdns.spacedock.badassvishnu;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,7 +27,7 @@ import java.util.Set;
  *
  * @author ykonoclast
  */
-class ChunkAllocator implements ICaracUser//TODO blinder méthodes partout
+class WorkLoader implements ICaracUser//TODO blinder méthodes partout
 {
     /**
      * ensemble de tous les groupes de caracs
@@ -43,7 +43,7 @@ class ChunkAllocator implements ICaracUser//TODO blinder méthodes partout
      *
      * @param p_walker permettant initialisation
      */
-    ChunkAllocator(CaracWalker p_walker)
+    WorkLoader(CaracWalker p_walker)
     {
 	m_walker = p_walker;
 	m_lCarGroup = new HashSet<>();
@@ -54,20 +54,21 @@ class ChunkAllocator implements ICaracUser//TODO blinder méthodes partout
      * combimaisons de caracs à dessein de répartition de la charge entre les
      * threads
      *
-     * @param p_nbWorkers
+     * @param nbProcessors
      * @return
      */
-    Set allocate(int p_nbWorkers)
+    Set allocate(int p_nbProcessors)
     {
 	initializeAllocator();
 	HashSet<HashSet<CarComb>> result = new HashSet<>();
 	int nbLines = m_lCarGroup.size();
-	int baseChunkSize = nbLines / p_nbWorkers;//troncature, le chunk de base vaut la partie entière de la division du nombre de lignes par le nombre de threads
-	int nbFloodWorkers = nbLines % p_nbWorkers;//le reste : c'est à dire le nombre de threads de débordement (qui auront un CaracGroup de plus que les autres)
+	int nbWorkers = (p_nbProcessors < nbLines) ? p_nbProcessors : nbLines;
+	int baseChunkSize = nbLines / nbWorkers;//troncature, le chunk de base vaut la partie entière de la division du nombre de lignes par le nombre de threads
+	int nbFloodWorkers = nbLines % nbWorkers;//le reste : c'est à dire le nombre de threads de débordement (qui auront un CaracGroup de plus que les autres)
 	int floodCounter = 0;
 	Iterator<CarComb> iterator = m_lCarGroup.iterator();
 
-	for (int w = 0; w < p_nbWorkers; ++w)
+	for (int w = 0; w < nbWorkers; ++w)
 	{//pour chaque thread
 	    HashSet<CarComb> chunk = new HashSet<>();
 	    int nElts = baseChunkSize + ((floodCounter < nbFloodWorkers) ? 1 : 0);//si c'est un thread de débordement il recevra un CaracGroup de plus
@@ -84,7 +85,7 @@ class ChunkAllocator implements ICaracUser//TODO blinder méthodes partout
     @Override
     public void useCarac(int p_trait, int p_dom, int p_comp)
     {
-	m_lCarGroup.add(new CarComb(p_trait, p_dom, p_comp));//la boucle de CaracWalker aura pour effet d'ajouter toutes les combinaisons possibles de caractéristiques à ce ChunkAllocator
+	m_lCarGroup.add(new CarComb(p_trait, p_dom, p_comp));//la boucle de CaracWalker aura pour effet d'ajouter toutes les combinaisons possibles de caractéristiques à ce WorkLoader
     }
 
     /**

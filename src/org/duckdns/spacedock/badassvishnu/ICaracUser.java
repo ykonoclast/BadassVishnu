@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package badassvishnu;
+package org.duckdns.spacedock.badassvishnu;
 
 /**
  * méthode ayant vocation à être appelée un grand nombre de fois par un
